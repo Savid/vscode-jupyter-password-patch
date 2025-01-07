@@ -20,7 +20,7 @@ jobs:
       - name: Get latest upstream commit
         id: upstream
         run: |
-          LATEST_COMMIT=$(curl -s "https://api.github.com/repos/microsoft/vscode-jupyter/commits/main" | jq -r .sha)
+          LATEST_COMMIT=$(curl -s "https://api.github.com/repos/microsoft/vscode-jupyter/commits/main" | jq -r .sha | cut -c1-7)
           echo "latest_commit=$LATEST_COMMIT" >> $GITHUB_OUTPUT
           
           # Check if we already have a release for this commit
