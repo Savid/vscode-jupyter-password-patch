@@ -2,7 +2,7 @@ name: Watch Upstream and Release
 
 on:
   schedule:
-    - cron: '*/30 * * * *'  # Check every 30 minutes
+    - cron: '0 */3 * * *'  # Check every 3 hours
   workflow_dispatch:  # Allow manual trigger
 
 permissions:
