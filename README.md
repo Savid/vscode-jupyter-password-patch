@@ -31,7 +31,7 @@ Add your Jupyter server passwords to your VSCode settings:
 ```json
 {
   "jupyter.passwords": {
-    "http://example.com:8888/": "your_password_here"
+    "http://example.com:8888": "your_password_here"
   }
 }
 ```
