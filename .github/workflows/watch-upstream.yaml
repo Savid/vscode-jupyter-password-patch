@@ -1,0 +1,70 @@
+name: Watch Upstream and Release
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'  # Check every 30 minutes
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  check-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Get latest upstream commit
+        id: upstream
+        run: |
+          LATEST_COMMIT=$(curl -s "https://api.github.com/repos/microsoft/vscode-jupyter/commits/main" | jq -r .sha)
+          echo "latest_commit=$LATEST_COMMIT" >> $GITHUB_OUTPUT
+          
+          # Check if we already have a release for this commit
+          if gh release view "$LATEST_COMMIT" &>/dev/null; then
+            echo "needs_build=false" >> $GITHUB_OUTPUT
+          else
+            echo "needs_build=true" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Clone upstream and apply patch
+        if: steps.upstream.outputs.needs_build == 'true'
+        run: |
+          # Clone upstream
+          git clone https://github.com/microsoft/vscode-jupyter.git
+          cd vscode-jupyter
+          
+          # Apply our patch
+          git apply ../passwords.patch
+          
+          # Store the version for later
+          echo "COMMIT_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
+
+      - name: Use Node
+        if: steps.upstream.outputs.needs_build == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.17.0
+
+      - name: Build VSIX
+        if: steps.upstream.outputs.needs_build == 'true'
+        run: |
+          cd vscode-jupyter
+          npm i -g npm@10.8.2
+          npm i -g @vscode/vsce
+          npm ci --ignore-scripts --prefer-offline --no-audit
+          npm run postinstall
+          npm run prePublishNonBundle
+          vsce package -o ../vscode-jupyter-patched.vsix
+
+      - name: Create Release
+        if: steps.upstream.outputs.needs_build == 'true'
+        run: |
+          gh release create "${{ env.COMMIT_SHA }}" \
+            --title "Release ${{ env.COMMIT_SHA }}" \
+            --notes "Automated release from upstream commit ${{ env.COMMIT_SHA }}" \
+            "vscode-jupyter-patched.vsix"
+        env:
+          GH_TOKEN: ${{ github.token }}

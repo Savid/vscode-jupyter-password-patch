@@ -1,0 +1,16 @@
+# Build output
+*.vsix
+
+# Dependencies
+node_modules/
+
+# IDE files
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
