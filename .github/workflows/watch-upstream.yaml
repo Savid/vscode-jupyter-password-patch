@@ -41,9 +41,10 @@ jobs:
           
           # Apply our patch
           git apply ../passwords.patch
-          
-          # Store the version for later
-          echo "COMMIT_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
+
+          # Store the short version of the SHA (7 chars is typical)
+          SHORT_SHA="$(git rev-parse --short=7 HEAD)"
+          echo "COMMIT_SHA=$SHORT_SHA" >> "$GITHUB_ENV"
 
       - name: Use Node
         if: steps.upstream.outputs.needs_build == 'true'
@@ -65,11 +66,8 @@ jobs:
       - name: Create Release
         if: steps.upstream.outputs.needs_build == 'true'
         run: |
-          SHORT_SHA="${{ env.COMMIT_SHA:0:7 }}"
-          TAG_NAME="commit-${SHORT_SHA}"
-          
-          gh release create "${TAG_NAME}" \
-            --title "Release ${SHORT_SHA}" \
+          gh release create "${{ env.COMMIT_SHA }}" \
+            --title "Release ${{ env.COMMIT_SHA }}" \
             --notes "Automated release from upstream commit ${{ env.COMMIT_SHA }}" \
             "vscode-jupyter-patched.vsix"
         env:
