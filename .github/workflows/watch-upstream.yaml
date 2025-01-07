@@ -65,8 +65,11 @@ jobs:
       - name: Create Release
         if: steps.upstream.outputs.needs_build == 'true'
         run: |
-          gh release create "${{ env.COMMIT_SHA }}" \
-            --title "Release ${{ env.COMMIT_SHA }}" \
+          SHORT_SHA="${{ env.COMMIT_SHA:0:7 }}"
+          TAG_NAME="commit-${SHORT_SHA}"
+          
+          gh release create "${TAG_NAME}" \
+            --title "Release ${SHORT_SHA}" \
             --notes "Automated release from upstream commit ${{ env.COMMIT_SHA }}" \
             "vscode-jupyter-patched.vsix"
         env:
